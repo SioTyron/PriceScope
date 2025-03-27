@@ -27,45 +27,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def main():
-    bdd_url = "http://localhost:8888/phpMyAdmin5/index.php?route=/table/change&db=Price_Scope&table=articles"
-    st.title("📊 Analyse des Prix Fast Food")
-    # Gestion des dates
-    with st.expander("🔧 Paramètres de Période", expanded=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            start_date = pd.to_datetime("2024-01-01")
-            end_date = pd.to_datetime("2025-03-31")
-            date_range = st.date_input(
-                "Sélectionnez la plage d'analyse",
-                [start_date, end_date],
-                help="Sélectionnez une période entre 2024-01-01 et 2025-03-31"
-            )
-            
-        start_date, end_date = date_range
-        if start_date > end_date:
-            st.error("⚠️ Erreur de période : La date de début doit être antérieure à la date de fin.")
-            return
-
-    # Connexion base de données
     connection = connect_to_db()
     if not connection:
         st.error("🚨 Échec de connexion à la base de données")
         return
-    
-    st.success(f"✅ Données chargées ({start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')})")
-    
-    # Affichage des données brutes
-    if st.checkbox("📁 Afficher les données brutes"):
-        data = fetch_fastfood(connection, start_date, end_date)
-        filtered_data = fetch_fastfood_filtered(connection, start_date, end_date)
-        
-        tab1, tab2 = st.tabs(["Données complètes", "Données filtrées"])
-        with tab1:
-            st.dataframe(data.style.highlight_max(color='#4CAF50', axis=0), use_container_width=True)
-        with tab2:
-            st.dataframe(filtered_data.style.format({"prixTtc": "€{:.2f}"}), use_container_width=True)
-    
-    # Analyse par catégorie
+
     st.header("📈 Analyse par Catégorie")
     categories = fetch_fastfood_categories(connection)
     
@@ -77,67 +43,80 @@ def main():
             
             st.markdown('<div class="category-container">', unsafe_allow_html=True)
             st.subheader(f"🏷️ {category}")
-            products = fetch_fastfood_product_by_nameEnseigne(connection, category)
             
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                selected_product = st.selectbox(
-                    f"Sélection produit ({category})",
-                    products,
-                    key=f"{category}_product"
-                )
-            with col2:
-                period = st.selectbox(
-                    "Période de comparaison",
-                    ["Aucun", "Mois -1", "Année -1"],
-                    key=f"{category}_{selected_product}_period"
-                )
+            # Récupérer les produits et les enseignes pour la catégorie
+            products_df = fetch_fastfood_product_by_nameEnseigne(connection, category)
+            
+            if not products_df.empty:
+                # Sélection du produit
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    selected_product = st.selectbox(
+                        f"Sélectionnez un produit dans la catégorie {category}",
+                        products_df.apply(
+                            lambda row: f"{row['nom_Article']} (Enseigne : {row['nom_Enseigne']}, Commune : {row['Commune']})",
+                            axis=1
+                        ),
+                        key=f"{category}_product"
+                    )
+                with col2:
+                    # Sélection de la période de comparaison
+                    period = st.selectbox(
+                        "Période de comparaison",
+                        ["Aucun", "Mois -1", "Année -1"],
+                        key=f"{category}_{selected_product}_period"
+                    )
                 
-            # Métriques de prix
-            if selected_product:
-                display_product_price(connection, start_date, end_date, selected_product, period)
-            
-            # Bouton toggle pour le graphique
-            col1, col2 = st.columns([3, 1])
-            with col1:
+                # Métriques de prix
+                if selected_product:
+                    # Extraire uniquement le nom du produit sans les autres informations
+                    product_name = selected_product.split(" (Enseigne : ")[0]
+                    display_product_price(connection, product_name, period)
+                
+                # Bouton toggle pour le graphique
                 btn_label = "📉 Masquer l'évolution des prix" if st.session_state[f"show_chart_{category}"] else "📈 Afficher l'évolution des prix"
                 if st.button(btn_label, key=f"toggle_{category}"):
                     st.session_state[f"show_chart_{category}"] = not st.session_state[f"show_chart_{category}"]
-            
-            # Affichage conditionnel du graphique
-            if st.session_state[f"show_chart_{category}"]:
-                with st.spinner("Chargement du graphique..."):
-                    price_evolution_df = fetch_price_evolution(connection, selected_product)
-                    if not price_evolution_df.empty:
-                        fig = px.line(
-                            price_evolution_df,
-                            x='date_Achat',
-                            y='prixTtc',
-                            markers=True,
-                            title=f"Historique des prix - {selected_product}",
-                            labels={'prixTtc': 'Prix TTC (€)', 'date_Achat': 'Date'},
-                            color_discrete_sequence=['#4CAF50']
-                        )
-                        fig.update_layout(
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            hovermode="x unified",
-                            xaxis_title="",
-                            yaxis_title="Prix (€)",
-                            margin=dict(l=20, r=20, t=40, b=20)
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.warning("Aucune donnée historique disponible")
+                
+                # Affichage conditionnel du graphique
+                if st.session_state[f"show_chart_{category}"]:
+                    with st.spinner("Chargement du graphique..."):
+                        price_evolution_df = fetch_price_evolution(connection, product_name)
+                        if not price_evolution_df.empty:
+                            fig = px.line(
+                                price_evolution_df,
+                                x='date_Achat',
+                                y='prixTtc',
+                                markers=True,
+                                title=f"Historique des prix - {product_name}",
+                                labels={'prixTtc': 'Prix TTC (€)', 'date_Achat': 'Date'},
+                                color_discrete_sequence=['#4CAF50']
+                            )
+                            fig.update_layout(
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                hovermode="x unified",
+                                xaxis_title="",
+                                yaxis_title="Prix (€)",
+                                margin=dict(l=20, r=20, t=40, b=20)
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.warning("Aucune donnée historique disponible")
+            else:
+                st.warning(f"Aucun produit trouvé pour la catégorie {category}.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)  # Espace supplémentaire entre les catégories
 
-def display_product_price(connection, start_date, end_date, selected_product, period):
+def display_product_price(connection, product_name, period):
     """Affichage des métriques de prix pour un produit"""
-    current_price = fetch_fastfood_price(connection, selected_product, start_date, end_date)
+    start_date = pd.to_datetime("2024-01-01")
+    end_date = pd.to_datetime("2025-03-31")
+    
+    current_price = fetch_fastfood_price(connection, product_name, start_date, end_date)
     
     if period != "Aucun":
-        delta = calculate_price_delta(connection, selected_product, start_date, end_date, period)
+        delta = calculate_price_delta(connection, product_name, start_date, end_date, period)
         delta_color = "inverse"  # Auto-couleur selon valeur
     else:
         delta = None
@@ -150,14 +129,14 @@ def display_product_price(connection, start_date, end_date, selected_product, pe
             delta=delta,
             help="Variation par rapport à la période précédente"
         )
-    current_price = fetch_fastfood_price(connection, selected_product, start_date, end_date)
-    min_price = fetch_min_price(connection, selected_product, start_date, end_date)
-    max_price = fetch_max_price(connection, selected_product, start_date, end_date)
+    min_price = fetch_min_price(connection, product_name, start_date, end_date)
+    max_price = fetch_max_price(connection, product_name, start_date, end_date)
     
     with col2:
         st.metric("Prix Minimum", f"{min_price:.2f} €")
     with col3:
         st.metric("Prix Maximum", f"{max_price:.2f} €")
+
 
 def calculate_price_delta(connection, product, start_date, end_date, period):
     """Calcul de la variation de prix par rapport à une période précédente"""

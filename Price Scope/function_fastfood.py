@@ -33,11 +33,12 @@ def fetch_fastfood_categories(connection):
 def fetch_fastfood_product_by_nameEnseigne(connection, category):
     """Récupère les produits d'une catégorie pour séparer l'affichage des produits"""
     query = f"""
-    SELECT DISTINCT nom_Article FROM `articles`
+    SELECT DISTINCT nom_Article, nom_Enseigne, Commune
+    FROM `articles`
     WHERE nom_Enseigne = '{category}'
     """
     products_df = pd.read_sql(query, connection)
-    return products_df['nom_Article'].tolist()
+    return products_df
 
 def fetch_price_evolution(connection, product_name):
     """Récupère l'évolution du prix d'un produit"""

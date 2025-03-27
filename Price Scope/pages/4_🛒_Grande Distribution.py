@@ -28,6 +28,7 @@ st.markdown("""
 def main():
     bdd_url = "http://localhost:8888/phpMyAdmin5/index.php?route=/table/change&db=Price_Scope&table=articles"
     st.title("📊 Analyse des Prix Grande Distribution")
+    
     # Gestion des dates
     with st.expander("🔧 Paramètres de Période", expanded=True):
         col1, col2 = st.columns(2)
@@ -63,6 +64,11 @@ def main():
             st.dataframe(data.style.highlight_max(color='#4CAF50', axis=0), use_container_width=True)
         with tab2:
             st.dataframe(filtered_data.style.format({"prixTtc": "€{:.2f}"}), use_container_width=True)
+
+    # Ajout d'un article
+    if st.session_state["role"] in ["editeur", "admin"]:
+        st.link_button("⛁ Ajouter un article", bdd_url, help=None, type="secondary", icon=None, disabled=False, use_container_width=False)
+        log_action(st.session_state["user_id"], "Ajout d'un article")
     
     # Analyse par catégorie
     st.header("📈 Analyse par Catégorie")
@@ -76,57 +82,64 @@ def main():
             
             st.markdown('<div class="category-container">', unsafe_allow_html=True)
             st.subheader(f"🏷️ {category}")
-            products = fetch_products_by_category(connection, category)
             
-            col1, col2, col3 = st.columns([2, 2, 1])
-            with col1:
-                selected_product = st.selectbox(
-                    f"Sélection produit ({category})",
-                    products,
-                    key=f"{category}_product"
-                )
-            with col2:
-                period = st.selectbox(
-                    "Période de comparaison",
-                    ["Aucun", "Mois -1", "Année -1"],
-                    key=f"{selected_product}_period"
-                )
+            # Récupérer les produits et les enseignes pour la catégorie
+            products_df = fetch_products_by_category(connection, category)
+            
+            if not products_df.empty:
+                # Sélection du produit
+                col1, col2 = st.columns([2, 1])
+                with col1:
+                    selected_product = st.selectbox(
+                        f"Sélection produit ({category})",
+                        products_df.apply(lambda row: f"{row['nom_Article']} (Enseigne : {row['nom_Enseigne']} - {row['Commune']})", axis=1),
+                        key=f"{category}_product"
+                    )
+                with col2:
+                    # Sélection de la période de comparaison
+                    period = st.selectbox(
+                        "Période de comparaison",
+                        ["Aucun", "Mois -1", "Année -1"],
+                        key=f"{category}_{selected_product}_period"
+                    )
                 
-            # Métriques de prix
-            if selected_product:
-                display_product_price(connection, start_date, end_date, selected_product, period)
-            
-            # Bouton toggle pour le graphique
-            col1, col2 = st.columns([3, 1])
-            with col1:
+                # Métriques de prix
+                if selected_product:
+                    # Extraire uniquement le nom du produit sans l'enseigne
+                    product_name = selected_product.split(" (Enseigne : ")[0]
+                    display_product_price(connection, start_date, end_date, product_name, period)
+                
+                # Bouton toggle pour le graphique
                 btn_label = "📉 Masquer l'évolution des prix" if st.session_state[f"show_chart_{category}"] else "📈 Afficher l'évolution des prix"
                 if st.button(btn_label, key=f"toggle_{category}"):
                     st.session_state[f"show_chart_{category}"] = not st.session_state[f"show_chart_{category}"]
-            
-            # Affichage conditionnel du graphique
-            if st.session_state[f"show_chart_{category}"]:
-                with st.spinner("Chargement du graphique..."):
-                    price_evolution_df = fetch_price_evolution(connection, selected_product)
-                    if not price_evolution_df.empty:
-                        fig = px.line(
-                            price_evolution_df,
-                            x='date_Achat',
-                            y='prixTtc',
-                            markers=True,
-                            title=f"Historique des prix - {selected_product}",
-                            labels={'prixTtc': 'Prix TTC (€)', 'date_Achat': 'Date'},
-                            color_discrete_sequence=['#4CAF50']
-                        )
-                        fig.update_layout(
-                            plot_bgcolor='rgba(0,0,0,0)',
-                            hovermode="x unified",
-                            xaxis_title="",
-                            yaxis_title="Prix (€)",
-                            margin=dict(l=20, r=20, t=40, b=20)
-                        )
-                        st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.warning("Aucune donnée historique disponible")
+                
+                # Affichage conditionnel du graphique
+                if st.session_state[f"show_chart_{category}"]:
+                    with st.spinner("Chargement du graphique..."):
+                        price_evolution_df = fetch_price_evolution(connection, product_name)
+                        if not price_evolution_df.empty:
+                            fig = px.line(
+                                price_evolution_df,
+                                x='date_Achat',
+                                y='prixTtc',
+                                markers=True,
+                                title=f"Historique des prix - {product_name}",
+                                labels={'prixTtc': 'Prix TTC (€)', 'date_Achat': 'Date'},
+                                color_discrete_sequence=['#4CAF50']
+                            )
+                            fig.update_layout(
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                hovermode="x unified",
+                                xaxis_title="",
+                                yaxis_title="Prix (€)",
+                                margin=dict(l=20, r=20, t=40, b=20)
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.warning("Aucune donnée historique disponible")
+            else:
+                st.warning(f"Aucun produit trouvé pour la catégorie {category}.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)  # Espace supplémentaire entre les catégories
