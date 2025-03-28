@@ -53,16 +53,16 @@ def main():
                     selected_product = st.selectbox(
                         f"Sélectionnez un produit dans la catégorie {category}",
                         products_df.apply(
-                            lambda row: f"{row['nom_Article']} (Enseigne : {row['nom_Enseigne']}, Commune : {row['Commune']})",
+                            lambda row: f"{row['nom_Article']} ({row['nom_Enseigne']}, {row['Commune']})",
                             axis=1
                         ),
                         key=f"{category}_{idx}_product"  # Inclure l'index dans la clé pour la rendre unique
                     )
                 
                 # Extraire les informations du produit sélectionné
-                product_details = selected_product.split(" (Enseigne : ")
+                product_details = selected_product.split(" (")
                 product_name = product_details[0]
-                enseigne_details = product_details[1].rstrip(")").split(", Commune : ")
+                enseigne_details = product_details[1].rstrip(")").split(", ")
                 enseigne_name = enseigne_details[0]
                 commune_name = enseigne_details[1]
                 
