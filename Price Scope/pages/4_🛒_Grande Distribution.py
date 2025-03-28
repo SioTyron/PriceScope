@@ -53,7 +53,7 @@ def main():
                     selected_product = st.selectbox(
                         f"Sélectionnez un produit dans la catégorie {category}",
                         products_df.apply(
-                            lambda row: f"{row['nom_Article']} ({row['nom_Enseigne']}, {row['Commune']})",
+                            lambda row: f"{row['nom_Article']} (Enseigne : {row['nom_Enseigne']}, Commune {row['Commune']})",
                             axis=1
                         ),
                         key=f"{category}_{idx}_product"  # Inclure l'index dans la clé pour la rendre unique
