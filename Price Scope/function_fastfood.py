@@ -94,3 +94,22 @@ def fetch_fastfood_price(connection, product_name, enseigne_name, commune_name, 
     """
     avg_price_df = pd.read_sql(query, connection)
     return avg_price_df['avg_price'].iloc[0] if not avg_price_df.empty else None
+
+def fetch_last_price(connection, product_name, enseigne_name, commune_name, start_date, end_date):
+    """Récupère le dernier prix enregistré pour un produit sur une période"""
+    query = f"""
+    SELECT prixTtc 
+    FROM `articles`
+    WHERE nom_Article = '{product_name}' 
+      AND nom_Enseigne = '{enseigne_name}'
+      AND Commune = '{commune_name}'
+      AND date_Achat BETWEEN '{start_date}' AND '{end_date}'
+    ORDER BY date_Achat DESC
+    LIMIT 1
+    """
+    last_price_df = pd.read_sql(query, connection)
+    return last_price_df['prixTtc'].iloc[0] if not last_price_df.empty else None
+
+
+
+################# Foncitons pour le formulaire 
