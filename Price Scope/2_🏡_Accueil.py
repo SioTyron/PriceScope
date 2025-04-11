@@ -36,6 +36,8 @@ st.markdown("""
 st.markdown('<div class="title">Price Scope 🧐</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Vos prix à la loupe</div>', unsafe_allow_html=True)
 
+st.write("Maintenance prévue le 12/04/2025 de 7h à 9h Heure GPE");
+
 # Introduction
 st.markdown("""
     <div class="section">
