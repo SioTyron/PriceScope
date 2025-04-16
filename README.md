@@ -11,34 +11,11 @@ Bienvenue sur **Price Scope**, un outil puissant pour analyser l'évolution des 
 ## 🎯 Objectif
 Fournir un moyen simple et efficace d'accéder aux informations sur les prix et de mieux gérer les dépenses quotidiennes.
 
-## 🚀 Comment démarrer ?
-1. Clonez le dépôt :
-   ```bash
-   git clone https://github.com/SioTyron/PriceScope.git
-   ```
-2. Installez les dépendances nécessaires :
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Lancez le script principal :
-   ```bash
-   python main.py
-   ```
-
 ## 🛠️ Technologies utilisées
 - **Python** : pour l'analyse et le traitement des données.
 - **Streamlit** : pour le corps de l'application.
 - **Pandas** : pour la manipulation des données.
 - **MySQL** : pour le stockage des données.
-
-## 🤝 Contribuer
-Les contributions sont les bienvenues ! Pour commencer :
-1. Forkez le projet.
-2. Créez une branche pour votre fonctionnalité :
-   ```bash
-   git checkout -b feature/ma-fonctionnalite
-   ```
-3. Faites un pull request après vos modifications.
 
 ## 👤 Auteur
 **Tyron**  
