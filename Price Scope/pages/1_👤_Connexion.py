@@ -1,7 +1,13 @@
 import streamlit as st
 import hashlib
 import mysql.connector
+from datetime import datetime, timedelta
+from streamlit_cookies_controller import CookieController
 from connexion import connect_to_db
+
+# Initialisation du contrôleur de cookies
+cookie = CookieController()
+COOKIE_EXPIRE_MINUTES = 30
 
 # Fonction pour hasher les mots de passe
 def hash_password(password):
@@ -31,6 +37,20 @@ def register_user(username, password, email):
         return True
     return False
 
+# Fonction à utiliser dans toutes les pages pour reconnecter automatiquement via cookie
+def check_auto_login():
+    session_info = cookie.get("auth")
+    if session_info and datetime.fromisoformat(session_info["expires_at"]) > datetime.utcnow():
+        st.session_state["authenticated"] = True
+        st.session_state["username"] = session_info["username"]
+        st.session_state["role"] = session_info["role"]
+        st.session_state["user_id"] = session_info["user_id"]
+    else:
+        st.session_state["authenticated"] = False
+
+# Vérification via cookie si la session est encore valide
+check_auto_login()
+
 # Vérifier l'état de session
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
@@ -50,11 +70,20 @@ if not st.session_state["authenticated"]:
     if st.button("Se connecter"):
         user = check_credentials(username, password)
         if user:
+            expires_at = datetime.utcnow() + timedelta(minutes=COOKIE_EXPIRE_MINUTES)
+            cookie.set("auth", {
+                "username": user['username'],
+                "role": user['role'],
+                "user_id": user['id'],
+                "expires_at": expires_at.isoformat()
+            })
+
             st.session_state["authenticated"] = True
-            st.session_state["username"] = username
+            st.session_state["username"] = user['username']
             st.session_state["role"] = user['role']
             st.session_state["user_id"] = user['id']
             st.success("Connexion réussie !")
+            st.rerun()
         else:
             st.error("Identifiants incorrects.")
 
@@ -76,13 +105,29 @@ if not st.session_state["authenticated"]:
                 st.error("Erreur lors de l'inscription. Veuillez réessayer.")
 else:
     st.sidebar.success(f"Connecté en tant que : {st.session_state['username']} ({st.session_state['role']})")
-    # Pages restreintes accessibles uniquement après authentification
     st.title("Vous êtes connecté !")
-    st.write("Vous pouvez naviguer librement dans l'application.")
     st.write("Pour vous déconnecter, cliquez sur le bouton 'Se déconnecter' dans la barre latérale.")
+
 if st.sidebar.button("Se déconnecter"):
-    st.session_state["authenticated"] = False
-    st.session_state["username"] = ""
-    st.session_state["role"] = ""
-    st.session_state["user_id"] = None
-    st.experimental_rerun()
+    st.session_state.clear()
+    try:
+        cookie.remove("auth")
+    except AttributeError:
+        pass  # Ignore si la méthode n'existe pas
+    st.rerun()
+
+with st.sidebar:
+    # Footer dans la sidebar
+    st.sidebar.markdown("""
+        <div style="
+            position: fixed;
+            bottom: 0;
+            padding: 10px 20px;
+            background: inherit;
+            color: #7f8c8d;
+            font-size: 0.8em;
+            text-align: center;
+        ">
+            Price Scope 2025 - Tous droits réservés
+        </div>
+    """, unsafe_allow_html=True)

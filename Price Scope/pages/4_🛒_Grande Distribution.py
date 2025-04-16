@@ -3,6 +3,12 @@ from function_grandedistribution import *
 from connexion import *
 import plotly.express as px
 import pandas as pd
+from auth_utils import *
+from datetime import datetime, timedelta
+from streamlit_cookies_controller import CookieController
+
+if "authenticated" not in st.session_state:
+    check_auto_login()
 
 if not st.session_state.get("authenticated", False):
     st.warning("Vous devez être connecté pour accéder à cette page.")
@@ -169,7 +175,7 @@ def display_product_price(connection, product_name, enseigne_name, commune_name,
     col1, col2, col3 = st.columns(3)
     with col1:
         metric_args = {
-            "label": "Prix de l'Article",
+            "label": "Prix le plus récent",
             "value": f"{current_price:.2f} €",
             "help": "Prix le plus récent enregistré dans la base"
         }
@@ -204,5 +210,30 @@ def calculate_price_delta(connection, product_name, enseigne_name, commune_name,
         return current_price - previous_price
     return None
 
+
 if __name__ == "__main__":
     main()
+
+if st.sidebar.button("Se déconnecter"):
+    st.session_state.clear()
+    try:
+        cookie.remove("auth")
+    except AttributeError:
+        pass  # Ignore si la méthode n'existe pas
+    st.rerun()
+
+with st.sidebar:
+    # Footer dans la sidebar
+    st.sidebar.markdown("""
+        <div style="
+            position: fixed;
+            bottom: 0;
+            padding: 10px 20px;
+            background: inherit;
+            color: #7f8c8d;
+            font-size: 0.8em;
+            text-align: center;
+        ">
+            Price Scope 2025 - Tous droits réservés
+        </div>
+    """, unsafe_allow_html=True)

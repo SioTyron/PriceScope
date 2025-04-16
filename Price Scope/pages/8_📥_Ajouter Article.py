@@ -4,6 +4,7 @@ from connexion import *
 import plotly.express as px
 import pandas as pd
 import yagmail
+from auth_utils import *
 
 if not st.session_state.get("authenticated", False):
     st.warning("Vous devez être connecté pour accéder à cette page.")
@@ -188,3 +189,27 @@ with st.expander("📋 Ajouter Plusieurs Articles", expanded=True):
                 except Exception as e:
                     st.error(f"Une erreur s'est produite lors de l'envoi de l'email : {str(e)}")
 
+
+if st.sidebar.button("Se déconnecter"):
+    st.session_state.clear()
+    try:
+        cookie.remove("auth")
+    except AttributeError:
+        pass  # Ignore si la méthode n'existe pas
+    st.rerun()
+
+with st.sidebar:
+    # Footer dans la sidebar
+    st.sidebar.markdown("""
+        <div style="
+            position: fixed;
+            bottom: 0;
+            padding: 10px 20px;
+            background: inherit;
+            color: #7f8c8d;
+            font-size: 0.8em;
+            text-align: center;
+        ">
+            Price Scope 2025 - Tous droits réservés
+        </div>
+    """, unsafe_allow_html=True)

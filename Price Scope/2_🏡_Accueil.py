@@ -36,8 +36,6 @@ st.markdown("""
 st.markdown('<div class="title">Price Scope 🧐</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Vos prix à la loupe</div>', unsafe_allow_html=True)
 
-st.write("Maintenance prévue le 12/04/2025 de 7h à 9h Heure GPE");
-
 # Introduction
 st.markdown("""
     <div class="section">
@@ -78,21 +76,8 @@ st.markdown("""
         <h3>👥 Participez à rendre l'outil meilleur </h3>
         <p>
             Price Scope se base sur vos données enregistrées pour proposer des analyses pertinentes. Ainsi, en partageant le prix des articles que vous achetez, vous contribuez à améliorer la quantité et la qualité des analyses fournies par l'outil.
-            Vous avez la possiblité d'ajouter un article en cliquant sur les boutons "Ajouter un article" dans les différentes pages de l'application si vous êtes "éditeur".
+            Vous avez la possiblité d'ajouter des articles en vous rendant sur la page "Ajouter Article".
         </p>
-    </div>
-""", unsafe_allow_html=True)
-
-# Technologies utilisées
-st.markdown("""
-    <div class="section">
-        <h3>🛠️ Technologies utilisées</h3>
-        <ul class="bullet">
-            <li><b>Python</b> pour l'analyse et le traitement des données.</li>
-            <li><b>Streamlit</b> pour une interface intuitive et fluide.</li>
-            <li><b>Pandas</b> pour la gestion efficace des données.</li>
-            <li><b>MySQL</b> pour un stockage des données robuste et performant.</li>
-        </ul>
     </div>
 """, unsafe_allow_html=True)
 
@@ -103,7 +88,7 @@ st.markdown("""
         <p>
             Développé par <b>Tyron</b>, un passionné de solutions technologiques qui simplifient la vie quotidienne. 
             Pour toute question ou suggestion, n'hésitez pas à me contacter à l'adresse suivante : 
-            <a href="mailto:certificat.tyron@gmail.com">pricescope.contact@gmail.com</a>.
+            <a href="mailto:pricescope.contact@gmail.com">pricescope.contact@gmail.com</a>.
         </p>
     </div>
 """, unsafe_allow_html=True)

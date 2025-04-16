@@ -42,7 +42,7 @@ def fetch_product_categories(connection):
     query = """
     SELECT DISTINCT categorie_Rayon 
     FROM `articles`
-    WHERE categorie_Enseigne != 'Fast Food'
+    WHERE categorie_Enseigne = 'Grande Distribution'
     """
     categories_df = pd.read_sql(query, connection)
     return categories_df['categorie_Rayon'].tolist()
