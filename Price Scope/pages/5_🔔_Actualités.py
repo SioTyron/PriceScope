@@ -134,8 +134,6 @@ def news_page():
                             font-size: 1em;
                         ">
                             {post['content']}
-                            </div>
-                        </div>
                     """, unsafe_allow_html=True)
 
 
